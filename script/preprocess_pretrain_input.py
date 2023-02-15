@@ -19,7 +19,7 @@ else:
 
 # 读取路网邻接表
 if dataset_name == 'BJ_Taxi':
-    with open('./mnt/data/jwj/TS_TrajGen_data_archive/adjacent_list.json', 'r') as f:
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/adjacent_list.json', 'r') as f:
         adjacent_list = json.load(f)
 else:
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_adjacent_list.json', 'r') as f:
