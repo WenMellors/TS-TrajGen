@@ -10,26 +10,26 @@ dataset_name = 'BJ_Taxi'
 max_step = 4
 random_encode = True  # 随机步数 encode，主要是减少数据量，避免过拟合
 if dataset_name == 'BJ_Taxi':
-    raw_traj_train_filename = 'chaoyang_traj_mm_train'
-    raw_traj_test_filename = 'chaoyang_traj_mm_test'
+    train_data = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_train.csv')
+    test_data = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_test.csv')
 else:
-    raw_traj_train_filename = 'porto_mm_train'
-    raw_traj_test_filename = 'porto_mm_test'
+    train_data = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_train.csv')
+    test_data = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_test.csv')
 
 
 # 读取路网邻接表
 if dataset_name == 'BJ_Taxi':
-    with open('../data/adjacent_list.json', 'r') as f:
+    with open('./mnt/data/jwj/TS_TrajGen_data_archive/adjacent_list.json', 'r') as f:
         adjacent_list = json.load(f)
 else:
-    with open('../data/porto_adjacent_list.json', 'r') as f:
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_adjacent_list.json', 'r') as f:
         adjacent_list = json.load(f)
 # 读取路网信息表
 if dataset_name == 'BJ_Taxi':
-    with open('../data/rid_gps.json', 'r') as f:
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/rid_gps.json', 'r') as f:
         rid_gps = json.load(f)
 else:
-    with open('../data/porto_rid_gps.json', 'r') as f:
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_rid_gps.json', 'r') as f:
         rid_gps = json.load(f)
 
 
@@ -121,19 +121,17 @@ def encode_trace(trace, fp):
 
 
 if __name__ == '__main__':
-    train_data = pd.read_csv('../data/{}.csv'.format(raw_traj_train_filename))
-    test_data = pd.read_csv('../data/{}.csv'.format(raw_traj_test_filename))
     train_rate = 0.9
     total_data_num = train_data.shape[0]
     train_num = int(total_data_num * train_rate)
     if dataset_name == 'BJ_Taxi':
-        train_output = open('../data/{}.csv'.format('bj_taxi_pretrain_input_train'), 'w')
-        eval_output = open('../data/{}.csv'.format('bj_taxi_pretrain_input_eval'), 'w')
-        test_output = open('../data/{}.csv'.format('bj_taxi_pretrain_input_test'), 'w')
+        train_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_pretrain_input_train'), 'w')
+        eval_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_pretrain_input_eval'), 'w')
+        test_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_pretrain_input_test'), 'w')
     else:
-        train_output = open('../data/{}.csv'.format('porto_taxi_pretrain_input_train'), 'w')
-        eval_output = open('../data/{}.csv'.format('porto_taxi_pretrain_input_eval'), 'w')
-        test_output = open('../data/{}.csv'.format('porto_taxi_pretrain_input_test'), 'w')
+        train_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_pretrain_input_train'), 'w')
+        eval_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_pretrain_input_eval'), 'w')
+        test_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_pretrain_input_test'), 'w')
     train_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     eval_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     test_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')

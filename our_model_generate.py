@@ -126,8 +126,8 @@ if dataset_name == 'BJ_Taxi':
         region2rid = json.load(f)
     region_num = len(region2rid)
     region_img_unit = 0.001
-    # region_img_width = math.ceil(lon_range / region_img_unit) + 1  # 图像的宽度
-    # region_img_height = math.ceil(lat_range / region_img_unit) + 1  # 映射出的图像的高度
+    region_img_width = math.ceil(lon_range / region_img_unit) + 1  # 图像的宽度
+    region_img_height = math.ceil(lat_range / region_img_unit) + 1  # 映射出的图像的高度
     region_data_feature = {
         'road_num': region_num + 1,
         'time_size': time_size + 1,
@@ -135,8 +135,8 @@ if dataset_name == 'BJ_Taxi':
         'time_pad': time_pad,
         'adj_mx': region_adj_mx,
         'node_features': region_features,
-        'img_width': 252,
-        'img_height': 211
+        'img_width': region_img_width,
+        'img_height': region_img_height
     }
     # 读取路网邻接表
     with open(os.path.join(data_root, archive_data_folder, 'adjacent_list.json'), 'r') as f:
