@@ -16,7 +16,7 @@ if dataset_name == 'BJ_Taxi':
     train_mm_traj = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_train.csv')
     test_mm_traj = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_test.csv')
     # 开始 Map
-    headers = 'mm_id,entity_id,traj_id,region_list,time_list\n'
+    headers = 'traj_id,region_list,time_list\n'
     train_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_train.csv', 'w')
     eval_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_eval.csv', 'w')
     test_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_test.csv', 'w')
@@ -30,7 +30,7 @@ else:
     train_mm_traj = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_train.csv')
     test_mm_traj = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_test.csv')
     # 开始 Map
-    headers = 'mm_id,entity_id,traj_id,region_list,time_list\n'
+    headers = 'traj_id,region_list,time_list\n'
     train_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_train.csv', 'w')
     eval_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_eval.csv', 'w')
     test_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_test.csv', 'w')
@@ -51,13 +51,10 @@ def write_row(write_file, write_row, region_list, time_list):
     Returns:
 
     """
-    mm_id = write_row['mm_id']
-    entity_id = write_row['entity_id']
     traj_id = write_row['traj_id']
     map_region_str = ','.join([str(x) for x in region_list])
     map_time_str = ','.join(time_list)
-    write_file.write('{},{},{},\"{}\",\"{}\"\n'.format(mm_id, entity_id, traj_id,
-                                                     map_region_str, map_time_str))
+    write_file.write('{},\"{}\",\"{}\"\n'.format(traj_id, map_region_str, map_time_str))
 
 
 train_rate = 0.9
@@ -65,7 +62,6 @@ total_data_num = train_mm_traj.shape[0]
 train_num = int(total_data_num * train_rate)
 
 for index, row in tqdm(train_mm_traj.iterrows(), total=train_mm_traj.shape[0], desc='map traj'):
-    mm_id = row['mm_id']
     # map
     rid_list = row['rid_list'].split(',')
     time_list = row['time_list'].split(',')
@@ -84,7 +80,6 @@ for index, row in tqdm(train_mm_traj.iterrows(), total=train_mm_traj.shape[0], d
         write_row(eval_file, row, map_region_list, map_time_list)
 
 for index, row in tqdm(test_mm_traj.iterrows(), total=test_mm_traj.shape[0], desc='map traj'):
-    mm_id = row['mm_id']
     # map
     rid_list = row['rid_list'].split(',')
     time_list = row['time_list'].split(',')
