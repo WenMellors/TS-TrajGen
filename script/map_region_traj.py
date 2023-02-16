@@ -13,8 +13,8 @@ if dataset_name == 'BJ_Taxi':
     # 读取区域邻接表
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/kaffpa_tarjan_region_adjacent_list.json', 'r') as f:
         region_adjacent_list = json.load(f)
-    train_mm_traj = pd.read_csv('/mnt/data/BJ_Taxi/chaoyang_traj_mm_train.csv')
-    test_mm_traj = pd.read_csv('/mnt/data/BJ_Taxi/chaoyang_traj_mm_test.csv')
+    train_mm_traj = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_train.csv')
+    test_mm_traj = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_test.csv')
     # 开始 Map
     headers = 'mm_id,entity_id,traj_id,region_list,time_list\n'
     train_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_train.csv', 'w')
@@ -27,8 +27,8 @@ else:
     # 读取区域邻接表
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_region_adjacent_list.json', 'r') as f:
         region_adjacent_list = json.load(f)
-    train_mm_traj = pd.read_csv('/mnt/data/Porto_Taxi/porto_mm_train.csv')
-    test_mm_traj = pd.read_csv('/mnt/data/Porto_Taxi/porto_mm_test.csv')
+    train_mm_traj = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_train.csv')
+    test_mm_traj = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_test.csv')
     # 开始 Map
     headers = 'mm_id,entity_id,traj_id,region_list,time_list\n'
     train_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_train.csv', 'w')
