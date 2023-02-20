@@ -36,6 +36,50 @@ if dataset_name == 'BJ_Taxi':
     ganerate_trace_file = os.path.join(data_root, dataset_name, 'TS_TrajGen_chaoyang_generate.csv')
     pretrain_region_gen_file = './save/BJ_Taxi/region_function_g_fc.pt'
     pretrain_region_gat_file = './save/BJ_Taxi/region_gat_fc.pt'
+    gen_config = {
+        "function_g": {
+            "road_emb_size": 256,
+            "time_emb_size": 50,
+            "hidden_size": 256,
+            "dropout_p": 0.6,
+            "lstm_layer_num": 2,
+            "pretrain_road_rep": None,
+            "dis_weight": 0.5,
+            "device": device
+        },
+        "function_h": {  # 0.7937
+            'embed_dim': 256,
+            'gps_emb_dim': 10,
+            'num_of_heads': 5,
+            'concat': False,
+            'device': device,
+            'distance_mode': 'l2'
+        },
+        'dis_weight': 0.45
+    }
+
+    region_gen_config = {
+        "function_g": {
+            "road_emb_size": 128,
+            "time_emb_size": 32,
+            "hidden_size": 128,
+            "dropout_p": 0.6,
+            "lstm_layer_num": 2,
+            "pretrain_road_rep": None,
+            "dis_weight": 0.5,
+            "device": device
+        },
+        "function_h": {
+            'embed_dim': 128,
+            'gps_emb_dim': 5,
+            'num_of_heads': 5,
+            'concat': False,
+            'device': device,
+            'distance_mode': 'l2',
+            'no_gps_emb': True
+        },
+        'dis_weight': 0.45
+    }
 else:
     # Porto_Taxi
     true_traj = pd.read_csv(os.path.join(data_root, dataset_name, 'porto_mm_test.csv'))
@@ -44,51 +88,51 @@ else:
     ganerate_trace_file = os.path.join(data_root, dataset_name, 'TS_TrajGen_generate.csv')
     pretrain_region_gen_file = './save/Porto_Taxi/region_function_g_fc.pt'
     pretrain_region_gat_file = './save/Porto_Taxi/region_gat_fc.pt'
+    gen_config = {
+        "function_g": {
+            "road_emb_size": 256,
+            "time_emb_size": 50,
+            "hidden_size": 256,
+            "dropout_p": 0.6,
+            "lstm_layer_num": 2,
+            "pretrain_road_rep": None,
+            "dis_weight": 0.5,
+            "device": device
+        },
+        "function_h": {  # 0.7937
+            'embed_dim': 256,
+            'gps_emb_dim': 10,
+            'num_of_heads': 5,
+            'concat': False,
+            'device': device,
+            'distance_mode': 'l2'
+        },
+        'dis_weight': 0.45
+    }
 
-gen_config = {
-    "function_g": {
-        "road_emb_size": 256,
-        "time_emb_size": 50,
-        "hidden_size": 256,
-        "dropout_p": 0.6,
-        "lstm_layer_num": 2,
-        "pretrain_road_rep": None,
-        "dis_weight": 0.5,
-        "device": device
-    },
-    "function_h": {  # 0.7937
-        'embed_dim': 256,
-        'gps_emb_dim': 10,
-        'num_of_heads': 5,
-        'concat': False,
-        'device': device,
-        'distance_mode': 'l2'
-    },
-    'dis_weight': 0.45
-}
+    region_gen_config = {
+        "function_g": {
+            "road_emb_size": 64,
+            "time_emb_size": 16,
+            "hidden_size": 64,
+            "dropout_p": 0.6,
+            "lstm_layer_num": 2,
+            "pretrain_road_rep": None,
+            "dis_weight": 0.5,
+            "device": device
+        },
+        "function_h": {
+            'embed_dim': 64,
+            'gps_emb_dim': 5,
+            'num_of_heads': 5,
+            'concat': False,
+            'device': device,
+            'distance_mode': 'l2',
+            'no_gps_emb': True
+        },
+        'dis_weight': 0.45
+    }
 
-region_gen_config = {
-    "function_g": {
-        "road_emb_size": 128,
-        "time_emb_size": 32,
-        "hidden_size": 128,
-        "dropout_p": 0.6,
-        "lstm_layer_num": 2,
-        "pretrain_road_rep": None,
-        "dis_weight": 0.5,
-        "device": device
-    },
-    "function_h": {
-        'embed_dim': 128,
-        'gps_emb_dim': 5,
-        'num_of_heads': 5,
-        'concat': False,
-        'device': device,
-        'distance_mode': 'l2',
-        'no_gps_emb': True
-    },
-    'dis_weight': 0.45
-}
 if dataset_name == 'BJ_Taxi':
     # 加载道路级别 node_feature
     node_feature_file = os.path.join(data_root, archive_data_folder, 'node_feature.pt') #  './data/node_feature.pt'
@@ -135,8 +179,8 @@ if dataset_name == 'BJ_Taxi':
         'time_pad': time_pad,
         'adj_mx': region_adj_mx,
         'node_features': region_features,
-        'img_width': region_img_width,
-        'img_height': region_img_height
+        'img_width': 52,
+        'img_height': 43
     }
     # 读取路网邻接表
     with open(os.path.join(data_root, archive_data_folder, 'adjacent_list.json'), 'r') as f:
@@ -189,8 +233,8 @@ else:
         'time_pad': time_pad,
         'adj_mx': adj_mx,
         'node_features': node_features,
-        'img_height': img_height,
-        'img_width': img_width
+        'img_height': 47,
+        'img_width': 134
     }
     with open(os.path.join(data_root, archive_data_folder, 'porto_region2rid.json'), 'r') as f:
         region2rid = json.load(f)
@@ -205,8 +249,8 @@ else:
         'time_pad': time_pad,
         'adj_mx': region_adj_mx,
         'node_features': region_features,
-        'img_width': region_img_width,
-        'img_height': region_img_height
+        'img_height': 47,
+        'img_width': 134
     }
 
     # 读取路网邻接表
