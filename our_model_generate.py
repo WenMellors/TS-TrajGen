@@ -221,7 +221,7 @@ else:
     # 区域相关信息
     with open(os.path.join(data_root, archive_data_folder, 'porto_region_adjacent_list.json'), 'r') as f:
         region_adjacent_list = json.load(f)
-    region_dist = np.load(os.path.join(data_root, archive_data_folder, 'porto_region_dist.npy'))
+    region_dist = np.load(os.path.join(data_root, archive_data_folder, 'porto_region_count_dist.npy'))
     with open(os.path.join(data_root, archive_data_folder, 'porto_region_transfer_prob.json'), 'r') as f:
         region_transfer_freq = json.load(f)
     with open(os.path.join(data_root, archive_data_folder, 'porto_rid2region.json'), 'r') as f:
