@@ -203,9 +203,9 @@ if __name__ == '__main__':
         test_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_pretrain_input_test'), 'w')
     else:
         # Xian
-        train_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_train'), 'w')
-        eval_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_eval'), 'w')
-        test_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_test'), 'w')
+        train_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_train.csv'), 'w')
+        eval_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_eval.csv'), 'w')
+        test_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_test.csv'), 'w')
     train_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     eval_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     test_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')

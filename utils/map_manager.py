@@ -43,10 +43,10 @@ class MapManager(object):
     def __init__(self, dataset_name):
         self.dataset_name = dataset_name
         if self.dataset_name == 'Xian':
-            self.lon_0 = 108.8555109
-            self.lon_1 = 109.0313147
-            self.lat_0 = 34.22585602
-            self.lat_1 = 34.29639323
+            self.lon_0 = 108.8093988
+            self.lon_1 = 109.0499449
+            self.lat_0 = 34.17026046
+            self.lat_1 = 34.29639324
         else:
             raise NotImplementedError()
         self.img_unit = 0.005  # 这样画出来的大小，大概是 0.42 km * 0.55 km 的格子
@@ -65,8 +65,9 @@ class MapManager(object):
         """
         x = math.floor((lon - self.lon_0) / self.img_unit)
         y = math.floor((lat - self.lat_0) / self.img_unit)
+        assert 0 <= x <= self.img_width
+        assert 0 <= y <= self.img_height
         return x, y
-
 
     # def gps_trace2img(trace):
     #     """

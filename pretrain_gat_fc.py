@@ -20,10 +20,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--local', type=str2bool, default=False)
 parser.add_argument('--dataset_name', type=str, default='BJ_Taxi')
 parser.add_argument('--device', type=str, default='cuda:0')
+parser.add_argument('--debug', type=str2bool, default=False)
 args = parser.parse_args()
 local = args.local
 dataset_name = args.dataset_name
 device = args.device
+debug = args.debug
 
 archive_data_folder = 'TS_TrajGen_data_archive'
 
@@ -47,8 +49,8 @@ else:
     # Xian
     config = {
         'embed_dim': 128,
-        'gps_emb_dim': 10,
-        'num_of_heads': 5,
+        'gps_emb_dim': 5,
+        'num_of_heads': 4,
         'concat': False,
         'device': device,
         'distance_mode': 'l2'
@@ -64,7 +66,6 @@ save_folder = './save/{}'.format(dataset_name)
 save_file_name = 'gat_fc.pt'
 temp_folder = './temp/{}/gat/'.format(dataset_name)
 train = True
-debug = False
 
 logger = get_logger(name='GatFC')
 logger.info('read data')
@@ -141,7 +142,7 @@ else:
     # 加载 node_feature
     node_feature_file = os.path.join(data_root, dataset_name, 'node_feature.pt')
     if not os.path.exists(node_feature_file):
-        road_info = pd.read_csv('./data/roadmap.geo')
+        road_info = pd.read_csv(os.path.join(data_root, dataset_name, 'xian.geo'))
         na_value = {'lanes': 'unknown', 'bridge': 'no', 'access': 'unknown', 'maxspeed': 120, 'tunnel': 'no',
                     'junction': 'no', 'width': 100}
         encode_feature = ['highway', 'oneway', 'length'] + list(na_value.keys())
@@ -168,6 +169,7 @@ else:
         for label in onehot_list:
             encoded_label = label_encoder.fit_transform(road_info[label])
             node_features['{}_encoded'.format(label)] = encoded_label
+        node_features = node_features.drop(columns=onehot_list)
         # for col in onehot_list:
         #     dum_col = pd.get_dummies(node_features[col], col)
         #     node_features = node_features.drop(col, axis=1)
@@ -288,6 +290,8 @@ if train:
             loss.backward()
             train_loss += loss.item()
             optimizer.step()
+            if debug:
+                break
         # val
         gat.train(False)
         val_hit = 0
@@ -299,6 +303,8 @@ if train:
             for i, p in enumerate(index):
                 if target[i] in p:
                     val_hit += 1
+            if debug:
+                break
         val_ac = val_hit / eval_num
         metrics.append(val_ac)
         lr_scheduler.step(val_ac)
@@ -308,6 +314,8 @@ if train:
         logger.info('==> Train Epoch {}: Train Loss {:.6f}, val ac {}, lr {}'.format(epoch, train_loss, val_ac, lr))
         if lr < early_stop_lr:
             logger.info('early stop')
+            break
+        if debug:
             break
     # load best epoch
     best_epoch = np.argmin(metrics)
@@ -327,6 +335,8 @@ for des, candidate_set, candidate_distance, target in tqdm(test_loader, desc='te
     for i, p in enumerate(index):
         if target[i] in p:
             test_hit += 1
+    if debug:
+        break
 test_ac = test_hit / test_num
 logger.info('==> Test Result: test ac {}'.format(test_ac))
 # 保存模型
