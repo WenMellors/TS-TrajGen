@@ -11,6 +11,9 @@ from utils.parser import str2bool
 import math
 import numpy as np
 import argparse
+from sklearn.preprocessing import LabelEncoder
+from utils.map_manager import MapManager
+import json
 
 
 parser = argparse.ArgumentParser()
@@ -27,18 +30,29 @@ archive_data_folder = 'TS_TrajGen_data_archive'
 if local:
     data_root = './data/'
 else:
-    data_root = '/mnt/data/jwj/'
+    data_root = '/mnt/data/jwj/TS_TrajGen_data_archive/'
 
 # 训练参数
 batch_size = 32
-config = {
-    'embed_dim': 256,
-    'gps_emb_dim': 10,
-    'num_of_heads': 5,
-    'concat': False,
-    'device': device,
-    'distance_mode': 'l2'
-}
+if dataset_name == 'BJ_Taxi' or dataset_name == 'Porto_Taxi':
+    config = {
+        'embed_dim': 256,
+        'gps_emb_dim': 10,
+        'num_of_heads': 5,
+        'concat': False,
+        'device': device,
+        'distance_mode': 'l2'
+    }
+else:
+    # Xian
+    config = {
+        'embed_dim': 128,
+        'gps_emb_dim': 10,
+        'num_of_heads': 5,
+        'concat': False,
+        'device': device,
+        'distance_mode': 'l2'
+    }
 max_epoch = 50
 learning_rate = 0.0005
 weight_decay = 0.0001
@@ -76,7 +90,7 @@ if dataset_name == 'BJ_Taxi':
         'img_width': img_width,
         'img_height': img_height
     }
-else:
+elif dataset_name == 'Porto_Taxi':
     # Porto_Taxi
     road_num = 11095
     road_num_with_pad = road_num + 1
@@ -98,6 +112,93 @@ else:
         'img_width': img_width,
         'img_height': img_height
     }
+else:
+    # Xian
+    map_manager = MapManager(dataset_name=dataset_name)
+    road_num = 17378
+    road_num_with_pad = road_num + 1
+    adjacent_np_file = os.path.join(data_root, dataset_name, 'adjacent_mx.npz')
+    if os.path.exists(adjacent_np_file):
+        adj_mx = sp.load_npz(adjacent_np_file)
+    else:
+        road_rel = pd.read_csv(os.path.join(data_root, dataset_name, 'xian.rel'))
+        # 使用稀疏矩阵构建邻接矩阵
+        adj_row = []
+        adj_col = []
+        adj_data = []
+        adj_set = set()
+        for index, row in tqdm(road_rel.iterrows(), total=road_rel.shape[0], desc='cal adj mx'):
+            f_id = row['origin_id']
+            t_id = row['destination_id']
+            if (f_id, t_id) not in adj_set:
+                adj_set.add((f_id, t_id))
+                adj_row.append(f_id)
+                adj_col.append(t_id)
+                adj_data.append(1.0)
+        adj_mx = sp.coo_matrix((adj_data, (adj_row, adj_col)), shape=(road_num_with_pad, road_num_with_pad))
+        # 缓存 adj_mx
+        sp.save_npz(adjacent_np_file, adj_mx)
+    # 加载 node_feature
+    node_feature_file = os.path.join(data_root, dataset_name, 'node_feature.pt')
+    if not os.path.exists(node_feature_file):
+        road_info = pd.read_csv('./data/roadmap.geo')
+        na_value = {'lanes': 'unknown', 'bridge': 'no', 'access': 'unknown', 'maxspeed': 120, 'tunnel': 'no',
+                    'junction': 'no', 'width': 100}
+        encode_feature = ['highway', 'oneway', 'length'] + list(na_value.keys())
+        node_features = road_info[encode_feature]
+        # 补齐缺失值
+        node_features = node_features.fillna(na_value)
+        # 对连续属性进行归一化
+        norm_dict = {
+            'length': 2,
+            'maxspeed': 6,
+            'width': 9
+        }
+        for k, v in norm_dict.items():
+            d = node_features[k]
+            min_ = d.min()
+            max_ = d.max()
+            dnew = (d - min_) / (max_ - min_)
+            node_features = node_features.drop(labels=k, axis=1)
+            node_features.insert(v, k, dnew)
+        # 对离散属性进行独热码
+        onehot_list = ['highway', 'oneway', 'lanes', 'bridge', 'access', 'tunnel', 'junction']
+        # 不做独热码了，直接编号吧
+        label_encoder = LabelEncoder()
+        for label in onehot_list:
+            encoded_label = label_encoder.fit_transform(road_info[label])
+            node_features['{}_encoded'.format(label)] = encoded_label
+        # for col in onehot_list:
+        #     dum_col = pd.get_dummies(node_features[col], col)
+        #     node_features = node_features.drop(col, axis=1)
+        #     node_features = pd.concat([node_features, dum_col], axis=1)
+        # 把经纬度离散化后
+        # 这里直接拿之前
+        with open(os.path.join(data_root, dataset_name, 'rid_gps.json'), 'r') as f:
+            rid_gps = json.load(f)
+        lon_grid = []  # x
+        lat_grid = []  # y
+        total_road = node_features.shape[0]
+        for i in range(total_road):
+            gps = rid_gps[str(i)]
+            x, y = map_manager.gps2grid(lon=gps[0], lat=gps[1])
+            lon_grid.append(x)
+            lat_grid.append(y)
+        node_features['lon_grid'] = lon_grid
+        node_features['lat_grid'] = lat_grid
+        node_features = node_features.values
+        # 缓存 node_features
+        node_features = torch.FloatTensor(node_features)
+        torch.save(node_features, node_feature_file)
+        node_features = node_features.to(device)
+    else:
+        node_features = torch.load(node_feature_file).to(device)
+    data_feature = {
+        'adj_mx': adj_mx,
+        'node_features': node_features,
+        'img_width': map_manager.img_width,
+        'img_height': map_manager.img_height
+    }
 
 # 加载模型
 gat = DistanceGatFC(config=config, data_feature=data_feature).to(device)
@@ -111,11 +212,16 @@ if dataset_name == 'BJ_Taxi':
     train_data = pd.read_csv(os.path.join(data_root, archive_data_folder, 'bj_taxi_pretrain_input_train.csv'))
     eval_data = pd.read_csv(os.path.join(data_root, archive_data_folder, 'bj_taxi_pretrain_input_eval.csv'))
     test_data = pd.read_csv(os.path.join(data_root, archive_data_folder, 'bj_taxi_pretrain_input_test.csv'))
-else:
+elif dataset_name == 'Porto_Taxi':
     # Porto_Taxi
     train_data = pd.read_csv(os.path.join(data_root, archive_data_folder, 'porto_taxi_pretrain_input_train.csv'))
     eval_data = pd.read_csv(os.path.join(data_root, archive_data_folder, 'porto_taxi_pretrain_input_eval.csv'))
     test_data = pd.read_csv(os.path.join(data_root, archive_data_folder, 'porto_taxi_pretrain_input_test.csv'))
+else:
+    # Xian
+    train_data = pd.read_csv(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_train.csv'))
+    eval_data = pd.read_csv(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_eval.csv'))
+    test_data = pd.read_csv(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_test.csv'))
 train_data = train_data.values.tolist()
 eval_data = eval_data.values.tolist()
 test_data = test_data.values.tolist()

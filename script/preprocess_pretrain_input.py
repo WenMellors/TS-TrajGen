@@ -3,34 +3,103 @@ from tqdm import tqdm
 import json
 from datetime import datetime
 from geopy import distance
+from shapely.geometry import LineString
 import numpy as np
+import argparse
 import os
 
-dataset_name = 'BJ_Taxi'
+
+def str2bool(s):
+    if isinstance(s, bool):
+        return s
+    if s.lower() in ('yes', 'true'):
+        return True
+    elif s.lower() in ('no', 'false'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('bool value expected.')
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--local', type=str2bool,
+                    default=True, help='whether save the trained model')
+parser.add_argument('--dataset_name', type=str,
+                    default='BJ_Taxi')
+
+args = parser.parse_args()
+local = args.local
+dataset_name = args.dataset_name
 max_step = 4
 random_encode = True  # 随机步数 encode，主要是减少数据量，避免过拟合
+
+if local:
+    data_root = '../data/'
+else:
+    data_root = '/mnt/data/jwj/TS_TrajGen_data_archive/'
+
+
 if dataset_name == 'BJ_Taxi':
     train_data = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_train.csv')
     test_data = pd.read_csv('/mnt/data/jwj/BJ_Taxi/chaoyang_traj_mm_test.csv')
-else:
+elif dataset_name == 'Porto_Taxi':
     train_data = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_train.csv')
     test_data = pd.read_csv('/mnt/data/jwj/Porto_Taxi/porto_mm_test.csv')
+else:
+    # Xian
+    train_data = pd.read_csv(os.path.join(data_root, dataset_name, 'xianshi_partA_mm_train.csv'))
+    test_data = pd.read_csv(os.path.join(data_root, dataset_name, 'xianshi_partA_mm_test.csv'))
 
 
 # 读取路网邻接表
 if dataset_name == 'BJ_Taxi':
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/adjacent_list.json', 'r') as f:
         adjacent_list = json.load(f)
-else:
+elif dataset_name == 'Porto_Taxi':
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_adjacent_list.json', 'r') as f:
         adjacent_list = json.load(f)
+else:
+    adjacent_file = os.path.join(data_root, dataset_name, 'adjacent_list.json')
+    if os.path.exists(adjacent_file):
+        with open(adjacent_file, 'r') as f:
+            adjacent_list = json.load(f)
+    else:
+        rid_rel = pd.read_csv(os.path.join(data_root, dataset_name, 'xian.rel'))
+        road_adjacent_list = {}
+        for index, row in tqdm(rid_rel.iterrows(), total=rid_rel.shape[0], desc='cal road adjacent list'):
+            f_rid = str(row['origin_id'])
+            t_rid = row['destination_id']
+            if f_rid not in road_adjacent_list:
+                road_adjacent_list[f_rid] = [t_rid]
+            else:
+                road_adjacent_list[f_rid].append(t_rid)
+        with open(adjacent_file, 'w') as f:
+            json.dump(road_adjacent_list, f)
+
 # 读取路网信息表
 if dataset_name == 'BJ_Taxi':
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/rid_gps.json', 'r') as f:
         rid_gps = json.load(f)
-else:
+elif dataset_name == 'Porto_Taxi':
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_rid_gps.json', 'r') as f:
         rid_gps = json.load(f)
+else:
+    # Xian
+    rid_gps_file = os.path.join(data_root, dataset_name, 'rid_gps.json')
+    if os.path.exists(rid_gps_file):
+        with open(rid_gps_file, 'r') as f:
+            rid_gps = json.load(f)
+    else:
+        rid_gps = {}
+        rid_info = pd.read_csv(os.path.join(data_root, dataset_name, 'xian.geo'))
+        for index, row in tqdm(rid_info.iterrows(), total=rid_info.shape[0], desc='cal road gps dict'):
+            rid = row['geo_id']
+            coordinate = eval(row['coordinates'])
+            road_line = LineString(coordinates=coordinate)
+            center_coord = road_line.centroid
+            center_lon, center_lat = center_coord.x, center_coord.y
+            rid_gps[rid] = (center_lon, center_lat)
+        with open(rid_gps_file, 'w') as f:
+            json.dump(rid_gps, f)
 
 
 def encode_time(timestamp):
@@ -128,10 +197,15 @@ if __name__ == '__main__':
         train_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_pretrain_input_train'), 'w')
         eval_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_pretrain_input_eval'), 'w')
         test_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_pretrain_input_test'), 'w')
-    else:
+    elif dataset_name == 'Porto_Taxi':
         train_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_pretrain_input_train'), 'w')
         eval_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_pretrain_input_eval'), 'w')
         test_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_pretrain_input_test'), 'w')
+    else:
+        # Xian
+        train_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_train'), 'w')
+        eval_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_eval'), 'w')
+        test_output = open(os.path.join(data_root, dataset_name, 'xianshi_partA_pretrain_input_test'), 'w')
     train_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     eval_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     test_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
