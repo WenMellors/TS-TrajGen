@@ -97,7 +97,7 @@ else:
             road_line = LineString(coordinates=coordinate)
             center_coord = road_line.centroid
             center_lon, center_lat = center_coord.x, center_coord.y
-            rid_gps[rid] = (center_lon, center_lat)
+            rid_gps[str(rid)] = (center_lon, center_lat)
         with open(rid_gps_file, 'w') as f:
             json.dump(rid_gps, f)
 
