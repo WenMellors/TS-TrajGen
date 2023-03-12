@@ -312,6 +312,13 @@ else:
     time_size = 2880
     loc_pad = road_num
     time_pad = time_size
+    lon_range = 0.133
+    lat_range = 0.046
+    img_unit = 0.005
+    lon_0 = -8.6887
+    lat_0 = 41.1405
+    img_width = math.ceil(lon_range / img_unit) + 1  # 图像的宽度
+    img_height = math.ceil(lat_range / img_unit) + 1  # 映射出的图像的高度
     data_feature = {
         'road_num': road_num + 1,
         'time_size': time_size + 1,
@@ -319,8 +326,8 @@ else:
         'time_pad': time_pad,
         'adj_mx': adj_mx,
         'node_features': node_features,
-        'img_height': 47,
-        'img_width': 134
+        'img_height': img_height,
+        'img_width': img_width
     }
     # 读取路网邻接表
     with open(os.path.join(data_root, archive_data_folder, dataset_name, 'adjacent_list.json'), 'r') as f:
