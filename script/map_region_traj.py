@@ -3,8 +3,35 @@ import json
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import argparse
+import os
 
-dataset_name = 'BJ_Taxi'
+
+def str2bool(s):
+    if isinstance(s, bool):
+        return s
+    if s.lower() in ('yes', 'true'):
+        return True
+    elif s.lower() in ('no', 'false'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('bool value expected.')
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--local', type=str2bool,
+                    default=True, help='whether save the trained model')
+parser.add_argument('--dataset_name', type=str,
+                    default='BJ_Taxi')
+args = parser.parse_args()
+local = args.local
+dataset_name = args.dataset_name
+
+if local:
+    data_root = '../data/'
+else:
+    data_root = '/mnt/data/jwj/TS_TrajGen_data_archive/'
+
 
 if dataset_name == 'BJ_Taxi':
     # 读取路段与区域之间的映射关系
@@ -20,7 +47,7 @@ if dataset_name == 'BJ_Taxi':
     train_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_train.csv', 'w')
     eval_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_eval.csv', 'w')
     test_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_test.csv', 'w')
-else:
+elif dataset_name == 'Porto_Taxi':
     # 读取路段与区域之间的映射关系
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_rid2region.json', 'r') as f:
         rid2region = json.load(f)
@@ -34,6 +61,21 @@ else:
     train_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_train.csv', 'w')
     eval_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_eval.csv', 'w')
     test_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_test.csv', 'w')
+else:
+    # Xian
+    # 读取路段与区域之间的映射关系
+    with open(os.path.join(data_root, dataset_name, 'rid2region.json'), 'r') as f:
+        rid2region = json.load(f)
+    # 读取区域邻接表
+    with open(os.path.join(data_root, dataset_name, 'region_adjacent_list.json'), 'r') as f:
+        region_adjacent_list = json.load(f)
+    train_mm_traj = pd.read_csv('/mnt/data/jwj/Xian/xianshi_partA_mm_train.csv')
+    test_mm_traj = pd.read_csv('/mnt/data/jwj/Xian/xianshi_partA_mm_test.csv')
+    # 开始 Map
+    headers = 'traj_id,region_list,time_list\n'
+    train_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/xianshi_mm_region_train.csv', 'w')
+    eval_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/xianshi_mm_region_eval.csv', 'w')
+    test_file = open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/xianshi_mm_region_test.csv', 'w')
 train_file.write(headers)
 eval_file.write(headers)
 test_file.write(headers)

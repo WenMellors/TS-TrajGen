@@ -80,7 +80,7 @@ if dataset_name == 'BJ_Taxi':
         },
         'dis_weight': 0.45
     }
-else:
+elif dataset_name == 'Porto_Taxi':
     # Porto_Taxi
     true_traj = pd.read_csv(os.path.join(data_root, dataset_name, 'porto_mm_test.csv'))
     pretrain_gen_file = './save/Porto_Taxi/function_g_fc.pt'
