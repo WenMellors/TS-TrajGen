@@ -6,7 +6,7 @@ import torch
 from generator.distance_gat_fc import DistanceGatFC
 from torch.utils.data import DataLoader
 from utils.ListDataset import ListDataset
-from utils.util import get_logger
+from utils.utils import get_logger
 from utils.parser import str2bool
 import math
 import numpy as np

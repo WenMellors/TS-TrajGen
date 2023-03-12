@@ -6,7 +6,7 @@ from torch.utils.data import random_split, DataLoader
 import torch
 import numpy as np
 import os
-from utils.util import get_logger
+from utils.utils import get_logger
 from tqdm import tqdm
 import argparse
 from utils.parser import str2bool

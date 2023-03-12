@@ -30,8 +30,9 @@ class DistanceGatFC(nn.Module):
         # self.gat_encoder2 = GATLayerImp3(num_in_features=self.embed_dim, num_out_features=self.embed_dim,
         #                                  num_of_heads=self.num_of_heads, concat=self.concat, device=self.device)
         # 对 lat 与 lon 做一个 Embedding
-        self.lat_embed = nn.Embedding(num_embeddings=data_feature['img_height'], embedding_dim=self.gps_emb_dim)
-        self.lon_embed = nn.Embedding(num_embeddings=data_feature['img_width'], embedding_dim=self.gps_emb_dim)
+        if not self.no_gps_emb:
+            self.lat_embed = nn.Embedding(num_embeddings=data_feature['img_height'], embedding_dim=self.gps_emb_dim)
+            self.lon_embed = nn.Embedding(num_embeddings=data_feature['img_width'], embedding_dim=self.gps_emb_dim)
         # 距离直接做个映射吧
         # 综合表征，距离，做一个 MLP 预测
         self.emb_fc = nn.Linear(in_features=self.embed_dim * 2, out_features=10)
