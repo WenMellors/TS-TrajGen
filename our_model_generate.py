@@ -11,6 +11,7 @@ import scipy.sparse as sp
 import argparse
 import os
 import math
+from utils.map_manager import MapManager
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--local', type=str2bool, default=False)
@@ -132,6 +133,60 @@ elif dataset_name == 'Porto_Taxi':
         },
         'dis_weight': 0.45
     }
+else:
+    assert dataset_name == 'Xian'
+    true_traj = pd.read_csv(os.path.join(data_root, dataset_name, 'xianshi_partA_mm_test.csv'))
+    pretrain_gen_file = './save/Xian/function_g_fc.pt'
+    pretrain_gat_file = './save/Xian/gat_fc.pt'
+    ganerate_trace_file = os.path.join(data_root, dataset_name, 'TS_TrajGen_generate.csv')
+    pretrain_region_gen_file = './save/Xian/region_function_g_fc.pt'
+    pretrain_region_gat_file = './save/Xian/region_gat_fc.pt'
+    gen_config = {
+        "function_g": {
+            "road_emb_size": 128,  # 需要和路网表征预训练部分维度一致
+            "time_emb_size": 32,
+            "hidden_size": 128,
+            "dropout_p": 0.6,
+            "lstm_layer_num": 2,
+            "pretrain_road_rep": None,
+            "dis_weight": 0.5,
+            "device": device
+        },
+        "function_h": {  # 0.7937
+            'embed_dim': 128,
+            'gps_emb_dim': 5,
+            'num_of_heads': 4,
+            'concat': False,
+            'device': device,
+            'distance_mode': 'l2'
+        },
+        'dis_weight': 0.45
+    }
+
+    region_gen_config = {
+        "function_g": {
+            "road_emb_size": 64,  # 就 1 千多个
+            "time_emb_size": 16,
+            "hidden_size": 64,
+            "dropout_p": 0.6,
+            "lstm_layer_num": 2,
+            "pretrain_road_rep": None,
+            "dis_weight": 0.5,
+            "device": device
+        },
+        "function_h": {
+            'embed_dim': 68,
+            'gps_emb_dim': 5,
+            'num_of_heads': 4,
+            'concat': False,
+            'device': device,
+            'distance_mode': 'l2',
+            'no_gps_emb': True
+        },
+        'dis_weight': 0.45
+    }
+
+map_manager = MapManager(dataset_name=dataset_name)
 
 if dataset_name == 'BJ_Taxi':
     # 加载道路级别 node_feature
@@ -202,7 +257,7 @@ if dataset_name == 'BJ_Taxi':
     road_time_distribution = np.load(os.path.join(data_root, archive_data_folder, 'road_time_distribution.npy'))
     region_time_distribution = np.load(os.path.join(data_root, archive_data_folder,
                                                     'kaffpa_tarjan_region_time_distribution.npy'))
-else:
+elif dataset_name == 'Porto_Taxi':
     # Porto_Taxi
     # 加载道路级别 node_feature
     node_feature_file = os.path.join(data_root, archive_data_folder, 'porto_node_feature.pt')
@@ -273,6 +328,67 @@ else:
     road_time_distribution = np.load(os.path.join(data_root, archive_data_folder, 'porto_road_time_distribution.npy'))
     region_time_distribution = np.load(os.path.join(data_root, archive_data_folder,
                                                     'porto_region_time_distribution.npy'))
+else:
+    # 加载道路级别 node_feature
+    node_feature_file = os.path.join(data_root, archive_data_folder, dataset_name, 'node_feature.pt')
+    node_features = torch.load(node_feature_file).to(device)
+    adjacent_np_file = os.path.join(data_root, archive_data_folder, dataset_name, 'adjacent_mx.npz')
+    adj_mx = sp.load_npz(adjacent_np_file)
+    # 加载区域级别 region_feature
+    region_adjacent_np_file = os.path.join(data_root, archive_data_folder, dataset_name, 'region_adj_mx.npz')
+    region_adj_mx = sp.load_npz(region_adjacent_np_file)
+    region_feature_file = os.path.join(data_root, archive_data_folder, dataset_name, 'region_feature.pt')
+    region_features = torch.load(region_feature_file, map_location=device)
+    # 数据集的大小
+    road_num = 17378
+    time_size = 2880
+    loc_pad = road_num
+    time_pad = time_size
+    data_feature = {
+        'road_num': road_num + 1,
+        'time_size': time_size + 1,
+        'road_pad': loc_pad,
+        'time_pad': time_pad,
+        'adj_mx': adj_mx,
+        'node_features': node_features,
+        'img_height': map_manager.img_height,
+        'img_width': map_manager.img_width
+    }
+    with open(os.path.join(data_root, archive_data_folder, dataset_name, 'region2rid.json'), 'r') as f:
+        region2rid = json.load(f)
+    region_num = len(region2rid)
+    region_data_feature = {
+        'road_num': region_num + 1,
+        'time_size': time_size + 1,
+        'road_pad': region_num,
+        'time_pad': time_pad,
+        'adj_mx': region_adj_mx,
+        'node_features': region_features,
+        'img_height': map_manager.img_height,
+        'img_width': map_manager.img_width
+    }
+
+    # 读取路网邻接表
+    with open(os.path.join(data_root, archive_data_folder, dataset_name, 'adjacent_list.json'), 'r') as f:
+        adjacent_list = json.load(f)
+    # 读取路网 GPS
+    with open(os.path.join(data_root, archive_data_folder, dataset_name, 'rid_gps.json'), 'r') as f:
+        rid_gps = json.load(f)
+    # 读取路段长度信息
+    with open(os.path.join(data_root, archive_data_folder, dataset_name, 'road_length.json'), 'r') as f:
+        road_length = json.load(f)
+    # 区域相关信息
+    with open(os.path.join(data_root, archive_data_folder, dataset_name, 'region_adjacent_list.json'), 'r') as f:
+        region_adjacent_list = json.load(f)
+    region_dist = np.load(os.path.join(data_root, archive_data_folder, dataset_name, 'region_count_dist.npy'))
+    with open(os.path.join(data_root, archive_data_folder, dataset_name, 'region_transfer_prob.json'), 'r') as f:
+        region_transfer_freq = json.load(f)
+    with open(os.path.join(data_root, archive_data_folder, dataset_name, 'rid2region.json'), 'r') as f:
+        rid2region = json.load(f)
+    road_time_distribution = np.load(os.path.join(data_root, archive_data_folder, dataset_name,
+                                                  'road_time_distribution.npy'))
+    region_time_distribution = np.load(os.path.join(data_root, archive_data_folder, dataset_name,
+                                                    'region_time_distribution.npy'))
 
 # 初始化生成器
 road_generator = GeneratorV4(config=gen_config, data_feature=data_feature).to(device)
