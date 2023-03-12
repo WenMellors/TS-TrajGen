@@ -11,7 +11,7 @@ max_step = 4
 random_encode = True  # 随机步数 encode，主要是减少数据量，避免过拟合，因为区域轨迹都比较短，所以就不跳步了
 
 
-dataset_name = 'BJ_Taxi'
+dataset_name = 'Xian'
 
 if dataset_name == 'BJ_Taxi':
     # 读取路段与区域之间的映射关系
@@ -25,7 +25,7 @@ if dataset_name == 'BJ_Taxi':
     train_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_train.csv')
     eval_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_eval.csv')
     test_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/bj_taxi_mm_region_test.csv')
-else:
+elif dataset_name == 'Porto_Taxi':
     # 读取路段与区域之间的映射关系
     with open('/mnt/data/jwj/TS_TrajGen_data_archive/porto_rid2region.json', 'r') as f:
         rid2region = json.load(f)
@@ -37,6 +37,34 @@ else:
     train_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_train.csv')
     eval_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_eval.csv')
     test_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/porto_taxi_mm_region_test.csv')
+else:
+    # 读取路段与区域之间的映射关系
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/rid2region.json', 'r') as f:
+        rid2region = json.load(f)
+    # 读取区域邻接表
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/rid_gps.json', 'r') as f:
+        rid_gps = json.load(f)
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/region2rid.json', 'r') as f:
+        region2rid = json.load(f)
+    region_gps = {}
+    for region in region2rid:
+        rid_set = region2rid[region]
+        lat_list = []
+        lon_list = []
+        for rid in rid_set:
+            rid_center_gps = rid_gps[str(rid)]
+            lon_list.append(rid_center_gps[0])
+            lat_list.append(rid_center_gps[1])
+        # TODO: 这里是几何中心，不一定科学
+        region_center = (np.average(lon_list), np.average(lat_list))
+        region_gps[region] = region_center
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/region_gps.json', 'w') as f:
+        json.dump(region_gps, f)
+    with open('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/region_adjacent_list.json', 'r') as f:
+        region_adjacent_list = json.load(f)
+    train_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/xianshi_mm_region_train.csv')
+    eval_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/xianshi_mm_region_eval.csv')
+    test_data = pd.read_csv('/mnt/data/jwj/TS_TrajGen_data_archive/Xian/xianshi_mm_region_test.csv')
 
 
 def encode_time(timestamp):
@@ -134,10 +162,18 @@ if __name__ == '__main__':
         train_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_region_pretrain_input_train'), 'w')
         eval_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_region_pretrain_input_eval'), 'w')
         test_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('bj_taxi_region_pretrain_input_test'), 'w')
-    else:
+    elif dataset_name == 'Porto_Taxi':
         train_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_region_pretrain_input_train'), 'w')
         eval_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_region_pretrain_input_eval'), 'w')
         test_output = open('/mnt/data/jwj/TS_TrajGen_data_archive/{}.csv'.format('porto_taxi_region_pretrain_input_test'), 'w')
+    else:
+        assert dataset_name == 'Xian'
+        train_output = open(
+            '/mnt/data/jwj/TS_TrajGen_data_archive/Xian/{}.csv'.format('xianshi_region_pretrain_input_train'), 'w')
+        eval_output = open(
+            '/mnt/data/jwj/TS_TrajGen_data_archive/Xian/{}.csv'.format('xianshi_region_pretrain_input_eval'), 'w')
+        test_output = open(
+            '/mnt/data/jwj/TS_TrajGen_data_archive/Xian/{}.csv'.format('xianshi_region_pretrain_input_test'), 'w')
     train_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     eval_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
     test_output.write('trace_loc,trace_time,des,candidate_set,candidate_dis,target\n')
