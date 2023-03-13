@@ -27,13 +27,6 @@ def gan_loss(candidate_prob, gen_candidate, reward, yaw_loss):
     # 这个 loss 的目的就是要模型强化那些特别真的选择
     # reward_refined_prob_log = select_prob_neg_log * reward
     # reward_refined_nll_loss = torch.sum(reward_refined_prob_log, dim=0)
-    # 还需要将每个点的偏航损失带入梯度中
-    # PLAN A: 计算每个点的置信度概率，然后乘以相应的偏航损失，得到加权后的损失
-    # PLAN A: 问题就是序列一长起来，cum_prob 就很小了，这样导致后面的几乎没怎么学到可能
-    # PLAN B: 看距离的增量，每一步决策影响不了前面，只能影响后面，所以看这一步做出之后的 yaw_loss 的变化值
-    # 在这个基础上，引入偏航情况，就是要通过轨迹距离来判断哪些决策是做的对的
-    # 标准呢？就是距离降幅越大的步骤做的越对
-    # 因此应该使用 PLAN B
     with torch.no_grad():
         yaw_distance_decrease_val = yaw_loss[:-1] - yaw_loss[1:]  # yaw_loss[i] - yaw_loss[i+1]
         # 值为正，就表明距离变小的，是好的。值越大，降幅越大
@@ -46,8 +39,7 @@ def gan_loss(candidate_prob, gen_candidate, reward, yaw_loss):
         else:
             # 如果最大、最小一样的话，就会出现除 0，也就是说没有好坏，权重赋予 0
             yaw_distance_decrease_rate = yaw_distance_decrease_val - yaw_distance_decrease_rate_min
-    # select_prob_neg_log_weight = reward + yaw_distance_decrease_rate
-    select_prob_neg_log_weight = reward
+    select_prob_neg_log_weight = reward + yaw_distance_decrease_rate
     loss = torch.sum(select_prob_neg_log * select_prob_neg_log_weight, dim=0)
     # reward_refined_prob = select_prob * reward
     # reward_refined_log_prob = torch.log(reward_refined_prob)
