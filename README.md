@@ -5,6 +5,14 @@
 
 Simulating the human mobility and generating large-scale trajectories are of great use in many real-world applications, such as urban planning, epidemic spreading analysis, and geographic privacy protect. Although many previous works have studied the problem of trajectory generation, the continuity of the generated trajectories has been neglected, which makes these methods useless for practical urban simulation scenarios. To solve this problem, we propose a novel two-stage generative adversarial framework to generate the continuous trajectory on the road network, namely TS-TrajGen, which efficiently integrates prior domain knowledge of human mobility with model-free learning paradigm. Specifically, we build the generator under the human mobility hypothesis of the A* algorithm to learn the human mobility behavior. For the discriminator, we combine the sequential reward with the mobility yaw reward to enhance the effectiveness of the generator. Finally, we propose a novel two-stage generation process to overcome the weak point of the existing stochastic generation process. Extensive experiments on two real-world datasets and two case studies demonstrate that our framework yields significant improvements over the state-of-the-art methods.
 
+## OpenSource Dataset
+The two Dataset _BJ-Taxi_ and _Porto-Taxi_ can be download at [Baidu Pan with code 5608](https://pan.baidu.com/s/1Im0g15cFfdlJ57Q6diMmzQ?pwd=5608). Each dataset has following 3 file:
+* `xx.geo`: the geo file which stores the road segment infomation of the road network.
+* `xx.rel`: the rel file which stores the adjacent information between road segments.
+* `xx.csv`: the map matched trajectory file.
+
+Note: the `geo` and `rel` file format is defined by our [LibCity](https://github.com/LibCity/Bigscity-LibCity) project, you can refer more information about this two file in [docs](https://bigscity-libcity-docs.readthedocs.io/en/latest/user_guide/data/atomic_files.html). In fact, these two files are still in CSV format (you can load it by `pd.read_csv`), but we have defined different suffixes to distinguish them.
+
 ## Cite
 
  W. Jiang, W. X. Zhao, J. Wang, and J. Jiang, "Continuous trajectory generation based on two-stage GAN," in Thirty-Seventh AAAI Conference on Artificial Intelligence (AAAI’23), 2023.
